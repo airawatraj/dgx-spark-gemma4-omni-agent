@@ -2,7 +2,7 @@
 
 Native multimodal Gemma 4 agent brain for NVIDIA DGX Spark.
 
-This repo is a minimal local setup for running `google/gemma-4-12B-it` through the OpenAI-compatible vLLM server on DGX Spark. It positions Gemma 4 as an omni-agent perception and reasoning brain:
+This repo is a minimal local setup for running [Gemma 4 12B](https://hfviewer.com/google/gemma-4-12B-it) through the OpenAI-compatible vLLM server on DGX Spark. It positions Gemma 4 as an omni-agent perception and reasoning brain:
 
 - input: text, images, audio, and video-as-frames
 - output: text
@@ -11,6 +11,20 @@ This repo is a minimal local setup for running `google/gemma-4-12B-it` through t
 The catch: Gemma 4 12B is not a voice or video output model. It can reason over multimodal inputs and call tools, but the response channel is still text.
 
 > Personal workstation setup. Not for enterprise use. Use at your own risk.
+
+## Which DGX Spark Agent Repo
+
+Use the repo that matches the workload:
+
+| Goal | Repo | Fit |
+|---|---|---|
+| Speed-oriented local agent stack | [airawatraj/dgx-spark-qwen-super-agent](https://github.com/airawatraj/dgx-spark-qwen-super-agent) | ✅ Best fit |
+| Larger reasoning model setup | [airawatraj/dgx-spark-nemotron-super-agent](https://github.com/airawatraj/dgx-spark-nemotron-super-agent) | ✅ Best fit |
+| Native multimodal inputs | [airawatraj/dgx-spark-gemma4-omni-agent](https://github.com/airawatraj/dgx-spark-gemma4-omni-agent) | ✅ Best fit |
+| Larger configured context window | [airawatraj/dgx-spark-gemma4-omni-agent](https://github.com/airawatraj/dgx-spark-gemma4-omni-agent) | ⚠️ Configured for `196,608` max model length; benchmark depths test up to `190,000` |
+| Voice or video output | [airawatraj/dgx-spark-gemma4-omni-agent](https://github.com/airawatraj/dgx-spark-gemma4-omni-agent) | ❌ Use separate TTS/video tooling |
+
+Current Gemma 4 12B Omni Agent measurements on this setup: approximately `25-30 tok/s` short-text generation with MTP, and `83/100` on `tool-eval-bench --short`. Treat these as local configuration results, not universal model claims.
 
 ## Why This Setup
 
@@ -60,7 +74,7 @@ curl -sf http://localhost:8000/health && echo OK
 
 ## Runtime Defaults
 
-`docker/start.sh` is the canonical launch path. It starts `vllm/vllm-openai:gemma4-unified` with `google/gemma-4-12B-it`, serves it as `Cogni-Brain`, and enables Gemma 4 tool/reasoning parsers, multimodal limits, prefix caching, chunked prefill, and MTP speculative decoding.
+`docker/start.sh` is the canonical launch path. It starts `vllm/vllm-openai:gemma4-unified` with [Gemma 4 12B](https://hfviewer.com/google/gemma-4-12B-it), serves it as `Cogni-Brain`, and enables Gemma 4 tool/reasoning parsers, multimodal limits, prefix caching, chunked prefill, and MTP speculative decoding with the [Gemma 4 12B assistant model](https://hfviewer.com/google/gemma-4-12B-it-assistant).
 
 Common overrides:
 
