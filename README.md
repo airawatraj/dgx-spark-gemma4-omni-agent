@@ -35,7 +35,7 @@ This setup provides:
 
 - native image understanding
 - native audio understanding
-- video-as-frame understanding
+- video-as-frames understanding
 - tool calling
 - reasoning parser support
 - approximately `25-30 TPS` short text generation with MTP, depending on workload
@@ -86,7 +86,7 @@ MODEL_ID=google/gemma-4-12B-it SERVED_MODEL_NAME=Cogni-Brain bash docker/start.s
 
 ## Field Notes
 
-See [`FIELD_NOTES.md`](FIELD_NOTES.md) for debugging notes and configuration tradeoffs discovered while turning the simple Gemma 4 launch recipe into a stable daily-driver setup on DGX Spark.
+See [`FIELD_NOTES.md`](FIELD_NOTES.md) for debugging notes and configuration tradeoffs discovered while turning the simple Gemma 4 launch recipe into a stable working setup on DGX Spark.
 
 It covers:
 
