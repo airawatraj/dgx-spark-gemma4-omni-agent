@@ -1,0 +1,23 @@
+cff-version: 1.2.0
+title: "DGX Spark Gemma 4 Omni Agent"
+message: "If you use this local setup or benchmark wrapper, please cite it as below."
+type: software
+authors:
+  - family-names: "Rawat"
+    given-names: "Rajendra Singh"
+    affiliation: "cogni.chat"
+    orcid: "https://orcid.org/0009-0007-5017-1341"
+repository-code: "https://github.com/airawatraj/dgx-spark-gemma4-omni-agent"
+abstract: >-
+  A lightweight local DGX Spark setup for running google/gemma-4-12B-it
+  as a native multimodal perception and agent brain through an
+  OpenAI-compatible vLLM endpoint.
+keywords:
+  - "Gemma 4"
+  - "DGX Spark"
+  - "vLLM"
+  - "Multimodal AI"
+  - "AI Agents"
+license: MIT
+version: 1.0.0
+date-released: "2026-06-05"
