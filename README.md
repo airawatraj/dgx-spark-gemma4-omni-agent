@@ -2,7 +2,9 @@
 
 Native multimodal Gemma 4 agent brain for NVIDIA DGX Spark.
 
-This repo is a minimal local setup for running [Gemma 4 12B](https://hfviewer.com/google/gemma-4-12B-it) through the OpenAI-compatible vLLM server on DGX Spark. It positions Gemma 4 as an omni-agent perception and reasoning brain:
+This repo is a minimal local setup for running [Gemma 4 12B](https://hfviewer.com/google/gemma-4-12B-it) through the OpenAI-compatible vLLM server on DGX Spark.
+
+Gemma 4 is positioned here as an omni-agent perception and reasoning brain:
 
 - input: text, images, audio, and video-as-frames
 - output: text
@@ -12,33 +14,32 @@ The catch: Gemma 4 12B is not a voice or video output model. It can reason over 
 
 > Personal workstation setup. Not for enterprise use. Use at your own risk.
 
-## Which DGX Spark Agent Repo
+## Which DGX Spark Agent Repo?
 
 Use the repo that matches the workload:
 
-| Goal | Repo | Fit |
+| Workload | Repo | Why |
 |---|---|---|
-| Speed-oriented local agent stack | [airawatraj/dgx-spark-qwen-super-agent](https://github.com/airawatraj/dgx-spark-qwen-super-agent) | ✅ Best fit |
-| Larger reasoning model setup | [airawatraj/dgx-spark-nemotron-super-agent](https://github.com/airawatraj/dgx-spark-nemotron-super-agent) | ✅ Best fit |
-| Native multimodal inputs | [airawatraj/dgx-spark-gemma4-omni-agent](https://github.com/airawatraj/dgx-spark-gemma4-omni-agent) | ✅ Best fit |
-| Larger configured context window | [airawatraj/dgx-spark-gemma4-omni-agent](https://github.com/airawatraj/dgx-spark-gemma4-omni-agent) | ⚠️ Configured for `196,608` max model length; benchmark depths test up to `190,000` |
-| Voice or video output | [airawatraj/dgx-spark-gemma4-omni-agent](https://github.com/airawatraj/dgx-spark-gemma4-omni-agent) | ❌ Use separate TTS/video tooling |
+| Fast local text/tool agent | [dgx-spark-qwen-super-agent](https://github.com/airawatraj/dgx-spark-qwen-super-agent) | Speed-oriented Atlas/NVFP4 stack |
+| Larger reasoning model | [dgx-spark-nemotron-super-agent](https://github.com/airawatraj/dgx-spark-nemotron-super-agent) | Larger model, stable long-context text agent |
+| Native multimodal agent | [dgx-spark-gemma4-omni-agent](https://github.com/airawatraj/dgx-spark-gemma4-omni-agent) | Text, image, audio, video-as-frames, tools |
+| Voice/video output | Separate service required | Gemma 4 outputs text; use TTS/video tooling externally |
 
 Current Gemma 4 12B Omni Agent measurements on this setup: approximately `25-30 tok/s` short-text generation with MTP, and `83/100` on `tool-eval-bench --short`. Treat these as local configuration results, not universal model claims.
 
 ## Why This Setup
 
-Gemma 4 12B gives the local agent stack native multimodal perception without splitting every input type across separate specialist models.
+Gemma 4 12B adds native multimodal perception to the local DGX Spark agent stack without splitting every input type across separate specialist models.
 
-What this setup adds over the earlier Nemotron/Qwen local-agent stacks:
+This setup provides:
 
 - native image understanding
 - native audio understanding
-- video as frame understanding
+- video-as-frame understanding
 - tool calling
-- reasoning parser
-- approximately 25-30 TPS short text with MTP, depending on workload
-- very large context beyond 131K if stable
+- reasoning parser support
+- approximately `25-30 TPS` short text generation with MTP, depending on workload
+- large configured context beyond `131K`
 - one OpenAI-compatible endpoint
 
 Practical boundary:
@@ -83,6 +84,20 @@ PORT=8001 MAX_MODEL_LEN=131072 bash docker/start.sh
 MODEL_ID=google/gemma-4-12B-it SERVED_MODEL_NAME=Cogni-Brain bash docker/start.sh
 ```
 
+## Field Notes
+
+See [`FIELD_NOTES.md`](FIELD_NOTES.md) for debugging notes and configuration tradeoffs discovered while turning the simple Gemma 4 launch recipe into a stable daily-driver setup on DGX Spark.
+
+It covers:
+
+- FP8 weight quantization issues on SM121
+- MTP assistant configuration
+- `TRITON_ATTN` startup confusion
+- why `196608` became the daily context target
+- why `0.75` memory utilization is the stability line
+- multimodal warmup warnings
+- tool/reasoning parser tradeoffs
+
 ## Repository Structure
 
 ```text
@@ -104,6 +119,7 @@ MODEL_ID=google/gemma-4-12B-it SERVED_MODEL_NAME=Cogni-Brain bash docker/start.s
 ├── setup/
 │   ├── download_model.sh
 │   └── install.sh
+├── FIELD_NOTES.md
 └── README.md
 ```
 

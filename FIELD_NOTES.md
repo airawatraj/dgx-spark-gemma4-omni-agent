@@ -2,13 +2,15 @@
 
 Configuration decisions and debugging notes specific to this stack. Setup and usage are in `README.md`.
 
+These notes are not a replacement for the simple happy-path launch recipe. They document the failure modes and tradeoffs I hit while turning the recipe into a stable working configuration.
+
 ---
 
-## War Stories
+## Observations
 
-### FP8 weight quantization can kill GPU workers on SM121
+### FP8 weight quantization can stop GPU workers on SM121
 
-`--quantization fp8` caused vLLM to select `CutlassFP8ScaledMMLinearKernel` for weight computation. On GB10 SM121, that path killed GPU worker subprocesses without a clean vLLM error. EngineCore stayed alive and waited forever for dead workers.
+`--quantization fp8` caused vLLM to select `CutlassFP8ScaledMMLinearKernel` for weight computation. On GB10 SM121, that path stopped GPU worker subprocesses without a clean vLLM error. EngineCore stayed alive and waited for workers that were no longer making progress.
 
 Failure signature:
 
@@ -18,7 +20,7 @@ Failure signature:
 - System RAM stays flat around early-init levels
 - Model weights never start loading
 
-This looks like slow initialization. Check before waiting forever:
+This can look like slow initialization. Check before waiting too long:
 
 ```bash
 top -b -n 1 | grep -E "python|vllm"
@@ -62,7 +64,7 @@ Right:
 
 Passing the wrong key exits on startup with a Pydantic `ValidationError`.
 
-Nightly field names can drift. Introspect before debugging ghosts:
+Nightly field names can drift. Introspect before chasing the wrong issue:
 
 ```bash
 docker run --rm --entrypoint python3 vllm/vllm-openai:gemma4-unified \
@@ -106,9 +108,9 @@ Mount Triton cache so kernel work survives restarts:
 
 ---
 
-### MTP was the unlock
+### MTP made the setup practical
 
-Plain Gemma 4 12B was too slow to justify as a daily model on Spark. The real unlock was MTP speculative decoding with the assistant model:
+Plain Gemma 4 12B was too slow for my daily Spark workflow. MTP speculative decoding with the assistant model made the setup practical:
 
 ```text
 google/gemma-4-12B-it-assistant
@@ -127,7 +129,7 @@ Sharing target model embedding weights with the draft model
 Gemma4 MTP: draft layer ...
 ```
 
-Without MTP, Gemma 4 felt like a curiosity. With MTP, it became usable.
+Without MTP, Gemma 4 was mainly interesting for testing. With MTP, it became usable for regular local-agent work.
 
 ---
 
@@ -147,7 +149,7 @@ The daily compromise:
 
 ```text
 131K = safe baseline, fastest boot
-196K = daily sweet spot for the full omni stack
+196K = daily working profile for the full omni stack
 262K = text-heavy or experimental profile
 ```
 
@@ -178,7 +180,7 @@ Pushing higher may work for benchmarks, but with swap disabled on DGX Spark unif
 
 Removing the tool and reasoning parsers can improve raw TPS slightly.
 
-For this repo, they stay on because the target use case is an agentic daily driver:
+For this repo, they stay on because the target use case is regular agentic work:
 
 ```bash
 --enable-auto-tool-choice
