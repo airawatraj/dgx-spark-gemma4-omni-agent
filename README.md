@@ -58,44 +58,15 @@ Health check:
 curl -sf http://localhost:8000/health && echo OK
 ```
 
-## Working Launch Command
+## Runtime Defaults
 
-`docker/start.sh` wraps this known-good command:
+`docker/start.sh` is the canonical launch path. It starts `vllm/vllm-openai:gemma4-unified` with `google/gemma-4-12B-it`, serves it as `Cogni-Brain`, and enables Gemma 4 tool/reasoning parsers, multimodal limits, prefix caching, chunked prefill, and MTP speculative decoding.
+
+Common overrides:
 
 ```bash
-docker run -d --name spark-brain \
-  --gpus all \
-  --restart=unless-stopped \
-  --ipc=host \
-  --network host \
-  --shm-size=32gb \
-  --ulimit memlock=-1 \
-  --ulimit stack=67108864 \
-  -v "$HOME/.cache/huggingface:/root/.cache/huggingface" \
-  -v "$HOME/.cache/triton:/root/.cache/triton" \
-  -v "$HOME/.cache/vllm:/root/.cache/vllm" \
-  -e HF_TOKEN="$HF_TOKEN" \
-  -e TRITON_CACHE_DIR=/root/.cache/triton \
-  vllm/vllm-openai:gemma4-unified \
-    google/gemma-4-12B-it \
-    --served-model-name Cogni-Brain \
-    --host 0.0.0.0 \
-    --port 8000 \
-    --dtype bfloat16 \
-    --kv-cache-dtype fp8 \
-    --gpu-memory-utilization 0.75 \
-    --max-model-len 196608 \
-    --max-num-seqs 2 \
-    --enable-prefix-caching \
-    --enable-chunked-prefill \
-    --max-num-batched-tokens 8192 \
-    --enable-auto-tool-choice \
-    --tool-call-parser gemma4 \
-    --reasoning-parser gemma4 \
-    --limit-mm-per-prompt '{"image":4,"audio":1,"video":1}' \
-    --generation-config vllm \
-    --safetensors-load-strategy prefetch \
-    --speculative-config '{"method":"mtp","model":"google/gemma-4-12B-it-assistant","num_speculative_tokens":5}'
+PORT=8001 MAX_MODEL_LEN=131072 bash docker/start.sh
+MODEL_ID=google/gemma-4-12B-it SERVED_MODEL_NAME=Cogni-Brain bash docker/start.sh
 ```
 
 ## Repository Structure
@@ -106,6 +77,12 @@ docker run -d --name spark-brain \
 │   ├── benchmark_speed.py
 │   ├── benchmark_speed_arena.py
 │   └── benchmark_smarts.py
+├── assets/
+│   ├── benchmark_test_1-3.png
+│   ├── benchmark_test_4-5.png
+│   ├── benchmark_smarts_1.png
+│   ├── benchmark_smarts_2.png
+│   └── benchmark_smarts_3.png
 ├── docker/
 │   ├── start.sh
 │   ├── status.sh
@@ -131,3 +108,27 @@ uv run benchmark/benchmark_smarts.py --mode short
 ```
 
 The default speed benchmark now matches the broader adjacent DGX Spark benchmark shape instead of the minimal smoke test.
+
+### Local Speed and Context Benchmark
+
+<p align="center">
+  <img src="./assets/benchmark_test_1-3.png" width="600" alt="Local speed benchmark tests 1 through 3">
+</p>
+
+<p align="center">
+  <img src="./assets/benchmark_test_4-5.png" width="600" alt="Local speed benchmark tests 4 and 5">
+</p>
+
+### Tool-Eval-Bench Capability Benchmark
+
+<p align="center">
+  <img src="./assets/benchmark_smarts_1.png" width="600" alt="Tool-eval benchmark summary 1">
+</p>
+
+<p align="center">
+  <img src="./assets/benchmark_smarts_2.png" width="600" alt="Tool-eval benchmark summary 2">
+</p>
+
+<p align="center">
+  <img src="./assets/benchmark_smarts_3.png" width="600" alt="Tool-eval benchmark summary 3">
+</p>
