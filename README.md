@@ -38,7 +38,7 @@ This setup provides:
 - video-as-frames understanding
 - tool calling
 - reasoning parser support
-- approximately `25-30 TPS` short text generation with MTP, depending on workload
+- local short-text generation around `25-30 tok/s` depending on request shape, with spark-arena `tg128` at `22.11 tok/s`
 - large configured context beyond `131K`
 - one OpenAI-compatible endpoint
 
@@ -118,6 +118,9 @@ It covers:
 │   ├── benchmark_speed_arena.py
 │   └── benchmark_smarts.py
 ├── assets/
+│   ├── cogni_chat_multimodal_tests.gif
+│   ├── spark_arena_gemma4.png
+│   └── benchmark_*.png
 ├── docker/
 │   ├── start.sh
 │   ├── status.sh
