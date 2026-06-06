@@ -139,6 +139,37 @@ def stream_completion(host, port, model, prompt, max_tokens=200, timeout=120, de
     return round(ttft_ms), round(tps, 1), tokens, full_text, None
 
 
+def get_served_models(host, port):
+    try:
+        response = requests.get(f"http://{host}:{port}/v1/models", timeout=5)
+        if response.status_code != 200:
+            return [], f"HTTP {response.status_code}: {response.text[:200]}"
+        data = response.json().get("data", [])
+        models = [item.get("id") for item in data if item.get("id")]
+        return models, None
+    except Exception as exc:
+        return [], str(exc)
+
+
+def validate_served_model(host, port, model):
+    models, error = get_served_models(host, port)
+    if error:
+        print(c(f"\nWARN Could not read /v1/models: {error}", "yellow"))
+        return
+
+    if not models:
+        print(c("\nWARN /v1/models did not report any served models.", "yellow"))
+        return
+
+    if model not in models:
+        available = ", ".join(models)
+        print(c(f"\nFAILED Requested model '{model}' is not served by this endpoint.", "red"))
+        print(c(f"  Available model(s): {available}", "dim"))
+        sys.exit(1)
+
+    print(c(f"  OK model is served ({model})", "green"))
+
+
 def test_baseline_tps(host, port, model, debug=False):
     header("TEST 1 - Baseline TPS (single session, short prompt)")
     prompt = "Explain quantum entanglement in simple terms."
@@ -374,7 +405,9 @@ def main():
         print(c("  Make sure spark-brain container is running and port 8000 is open.", "dim"))
         sys.exit(1)
 
-    print(c("  OK vLLM is reachable\n", "green"))
+    print(c("  OK vLLM is reachable", "green"))
+    validate_served_model(args.host, args.port, args.model)
+    print()
 
     avg_tps, peak_tps = test_baseline_tps(args.host, args.port, args.model, debug=args.debug)
     test_tps_vs_length(args.host, args.port, args.model)
