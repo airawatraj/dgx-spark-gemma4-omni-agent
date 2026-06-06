@@ -6,9 +6,10 @@ This repo is a minimal local setup for running [Gemma 4 12B](https://hfviewer.co
 
 Gemma 4 is positioned here as an omni-agent perception and reasoning brain:
 
-- input: text, images, audio, and video-as-frames
-- output: text
-- spoken output: use a separate TTS service if needed
+* input: text, images, audio, and video-as-frames
+* output: text
+* agent shell: OpenAI-compatible endpoint for local tools, Telegram workflows, and sandboxed agent runtimes
+* spoken output: use a separate TTS service if needed
 
 The catch: Gemma 4 12B is not a voice or video output model. It can reason over multimodal inputs and call tools, but the response channel is still text.
 
@@ -18,12 +19,12 @@ The catch: Gemma 4 12B is not a voice or video output model. It can reason over 
 
 Use the repo that matches the workload:
 
-| Workload | Repo | Why |
-|---|---|---|
-| Fast local text/tool agent | [dgx-spark-qwen-super-agent](https://github.com/airawatraj/dgx-spark-qwen-super-agent) | Speed-oriented Atlas/NVFP4 stack |
-| Larger reasoning model | [dgx-spark-nemotron-super-agent](https://github.com/airawatraj/dgx-spark-nemotron-super-agent) | Larger model, stable long-context text agent |
-| Native multimodal agent | [dgx-spark-gemma4-omni-agent](https://github.com/airawatraj/dgx-spark-gemma4-omni-agent) | Text, image, audio, video-as-frames, tools |
-| Voice/video output | Separate service required | Gemma 4 outputs text; use TTS/video tooling externally |
+| Workload                            | Repo                                                                                           | Why                                                           |
+| ----------------------------------- | ---------------------------------------------------------------------------------------------- | ------------------------------------------------------------- |
+| Native multimodal daily agent       | [dgx-spark-gemma4-omni-agent](https://github.com/airawatraj/dgx-spark-gemma4-omni-agent)       | Text, image, audio, video-as-frames, multilingual chat, tools |
+| Fast local text/tool agent          | [dgx-spark-qwen-super-agent](https://github.com/airawatraj/dgx-spark-qwen-super-agent)         | Speed-oriented Atlas/NVFP4 stack                              |
+| Larger long-context reasoning model | [dgx-spark-nemotron-super-agent](https://github.com/airawatraj/dgx-spark-nemotron-super-agent) | Larger model, stable long-context text agent                  |
+| Voice/video output                  | Separate service required                                                                      | Gemma 4 outputs text; use STT/TTS/video tooling externally    |
 
 Current Gemma 4 12B Omni Agent measurements on this setup: approximately `25-30 tok/s` on local short-text generation with MTP, `22.11 tok/s` on the spark-arena `tg128` submission, and `83/100` on `tool-eval-bench --short`. Treat these as local configuration results, not universal model claims.
 
@@ -33,23 +34,26 @@ Gemma 4 12B adds native multimodal perception to the local DGX Spark agent stack
 
 This setup provides:
 
-- native image understanding
-- native audio understanding
-- video-as-frames understanding
-- tool calling
-- reasoning parser support
-- local short-text generation around `25-30 tok/s` depending on request shape, with spark-arena `tg128` at `22.11 tok/s`
-- large configured context beyond `131K`
-- one OpenAI-compatible endpoint
+* native image understanding
+* native audio understanding
+* multilingual chat, including Hindi/Hinglish workflows
+* video-as-frames understanding
+* tool calling
+* reasoning parser support
+* local short-text generation around `25-30 tok/s` depending on request shape, with spark-arena `tg128` at `22.11 tok/s`
+* large configured context beyond `131K`
+* one OpenAI-compatible endpoint
+* practical integration path for Telegram-based local agent workflows
 
 Practical boundary:
 
-- Gemma 4 12B can process image input.
-- Video is processed as frames.
-- This Gemma 4 12B setup supports audio input through vLLM.
-- Audio input is limited to about 30 seconds.
-- Video input is limited to about 60 seconds at 1 FPS.
-- vLLM projects raw 16 kHz waveform frames into LM space for Gemma 4 12B audio.
+* Gemma 4 12B can process image input.
+* This Gemma 4 12B setup supports audio input through vLLM.
+* Telegram voice notes in NeMoHermes require a speech-to-text layer before the agent sees text.
+* Video is processed as frames.
+* Audio input is limited to about 30 seconds.
+* Video input is limited to about 60 seconds at 1 FPS.
+* vLLM projects raw 16 kHz waveform frames into LM space for Gemma 4 12B audio.
 
 ## Quick Start
 
@@ -95,19 +99,46 @@ SPECULATIVE_MODEL_ID=google/gemma-4-12B-it-assistant NUM_SPECULATIVE_TOKENS=5 ba
 
 For unusual vLLM builds, `SPECULATIVE_CONFIG` can still be set directly to replace the generated MTP JSON.
 
+## Telegram Voice Notes
+
+Telegram voice notes through NeMoHermes/OpenShell require local STT inside the sandbox.
+
+The working path is:
+
+```text
+Telegram voice note
+→ Hermes Gateway
+→ local faster-whisper STT
+→ Cogni-Brain Omni / Gemma 4
+→ Telegram text reply
+```
+
+See [`VOICE_TELEGRAM_NEMOHERMES.md`](VOICE_TELEGRAM_NEMOHERMES.md) for the exact setup, including:
+
+* installing `faster-whisper` inside the sandbox user site
+* exporting `PYTHONPATH` before gateway startup
+* enabling `stt.local` in Hermes config
+* downloading `Systran/faster-whisper-base` on the host
+* uploading the model into `/sandbox/models`
+* pointing Hermes to the local model path
+
+This is required because the NeMoHermes/OpenShell sandbox is policy-gated; runtime Hugging Face downloads can fail even when the host already has the model.
+
 ## Field Notes
 
 See [`FIELD_NOTES.md`](FIELD_NOTES.md) for debugging notes and configuration tradeoffs discovered while turning the simple Gemma 4 launch recipe into a stable working setup on DGX Spark.
 
 It covers:
 
-- FP8 weight quantization issues on SM121
-- MTP assistant configuration
-- `TRITON_ATTN` startup confusion
-- why `196608` became the daily context target
-- why `0.75` memory utilization is the stability line
-- multimodal warmup warnings
-- tool/reasoning parser tradeoffs
+* FP8 weight quantization issues on SM121
+* MTP assistant configuration
+* `TRITON_ATTN` startup confusion
+* why `196608` became the daily context target
+* why `0.75` memory utilization is the stability line
+* multimodal warmup warnings
+* tool/reasoning parser tradeoffs
+
+For Telegram voice notes, see [`VOICE_TELEGRAM_NEMOHERMES.md`](VOICE_TELEGRAM_NEMOHERMES.md).
 
 ## Repository Structure
 
@@ -118,7 +149,7 @@ It covers:
 │   ├── benchmark_speed_arena.py
 │   └── benchmark_smarts.py
 ├── assets/
-│   ├── cogni_chat_multimodal_tests.gif
+│   ├── cogni_chat_multimodal_multilingual_tests.gif
 │   ├── spark_arena_gemma4.png
 │   └── benchmark_*.png
 ├── docker/
@@ -129,6 +160,7 @@ It covers:
 │   ├── download_model.sh
 │   └── install.sh
 ├── FIELD_NOTES.md
+├── VOICE_TELEGRAM_NEMOHERMES.md
 └── README.md
 ```
 
@@ -156,30 +188,30 @@ The default speed benchmark now matches the broader adjacent DGX Spark benchmark
 
 > Benchmarked using [llama-benchy](https://github.com/eugr/llama-benchy) with the standardized spark-arena methodology. This run used the Gemma 4 omni-agent profile rather than a stripped text-only maximum-throughput profile.
 
-| Metric | Result |
-|---|---|
-| Single session TPS (`tg128`) | **22.11 tok/s** |
-| Runtime | **vLLM** |
-| Model | **google/gemma-4-12B-it** |
-| Weight dtype | **BF16** |
-| KV cache dtype | **FP8** |
-| Speculative decoding | **Gemma 4 MTP assistant, 5 speculative tokens** |
-| Configured max context | **196,608 tokens** |
-| GPU memory utilization | **0.75** |
-| Hardware | **Single DGX Spark (GB10)** |
+| Metric                       | Result                                          |
+| ---------------------------- | ----------------------------------------------- |
+| Single session TPS (`tg128`) | **22.11 tok/s**                                 |
+| Runtime                      | **vLLM**                                        |
+| Model                        | **google/gemma-4-12B-it**                       |
+| Weight dtype                 | **BF16**                                        |
+| KV cache dtype               | **FP8**                                         |
+| Speculative decoding         | **Gemma 4 MTP assistant, 5 speculative tokens** |
+| Configured max context       | **196,608 tokens**                              |
+| GPU memory utilization       | **0.75**                                        |
+| Hardware                     | **Single DGX Spark (GB10)**                     |
 
 <p align="center">
   <img src="./assets/spark_arena_gemma4.png" width="800" alt="spark-arena Gemma 4 12B benchmark result">
   <br><i>spark-arena community benchmark for Gemma 4 12B on single DGX Spark: https://spark-arena.com/benchmark/sub1780704040457</i>
 </p>
 
-## Multimodal Agent Smoke Tests
+## Multimodal and Multilingual Agent Smoke Tests
 
-These are informal multimodal checks through the agent interface, not formal benchmark scores. They test whether the Gemma 4 stack can reason over images in practical workflows.
+These are informal multimodal checks through the agent interface, not formal benchmark scores. They test whether the Gemma 4 stack can reason over practical image, language, and Telegram-agent workflows.
 
 <p align="center">
-  <img src="./assets/cogni_chat_multimodal_tests.gif" width="420" alt="Gemma 4 multimodal Telegram smoke tests">
-  <br><i>Telegram-based multimodal smoke tests: aerial-scene reasoning and visual puzzle solving.</i>
+  <img src="./assets/cogni_chat_multimodal_multilingual_tests.gif" width="420" alt="Gemma 4 multimodal and multilingual Telegram smoke tests">
+  <br><i>Telegram-based multimodal and multilingual smoke tests: aerial-scene reasoning, visual puzzle solving, Hindi/Hinglish chat, and local voice-note STT.</i>
 </p>
 
 ### Test Prompts
@@ -199,12 +231,20 @@ Examine the lighting and shadows in this scene. Based on the length, direction, 
 
 Visual Puzzle:
 Solve the visual puzzle. Answer briefly with the option letter and one short reason.
+
+Hindi / Hinglish:
+आसमान में कितने tare हैं
+
+Telegram Voice Note:
+short spoken message sent through Telegram and transcribed locally with faster-whisper before reaching the agent
 ```
 
 Observed behavior:
 
-- aerial scene: plausible reasoning about vehicle counts, road layers, traffic flow, shadows, and dense commercial-district characteristics
-- visual puzzle: correctly answered `Option B`
+* aerial scene: plausible reasoning about vehicle counts, road layers, traffic flow, shadows, and dense commercial-district characteristics
+* visual puzzle: correctly answered `Option B`
+* Hindi/Hinglish: handled mixed-script multilingual chat
+* Telegram voice note: local STT path worked after configuring `faster-whisper` and a local Whisper model inside the sandbox
 
 ## Local Speed and Context Benchmark
 
