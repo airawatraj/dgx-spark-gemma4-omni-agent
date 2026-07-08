@@ -4,6 +4,14 @@ Native multimodal Gemma 4 agent brain for NVIDIA DGX Spark.
 
 This repo is a minimal local setup for running [Gemma 4 12B](https://hfviewer.com/google/gemma-4-12B-it) through the OpenAI-compatible vLLM server on DGX Spark.
 
+![Python](https://img.shields.io/badge/python-3.10%2B-blue?logo=python&logoColor=white)
+![Base Model](https://img.shields.io/badge/base%20model-Gemma4--12B-orange)
+![Runtime](https://img.shields.io/badge/runtime-vLLM-orange)
+![Hardware](https://img.shields.io/badge/hardware-NVIDIA%20DGX%20Spark-brightgreen?logo=nvidia&logoColor=white)
+![Context](https://img.shields.io/badge/context-196K-blue)
+![Tool Eval](https://img.shields.io/badge/tool--eval-83%2F100-yellow)
+![Multimodal](https://img.shields.io/badge/multimodal-image%20%7C%20audio%20%7C%20video-yellow)
+
 Gemma 4 is positioned here as an omni-agent perception and reasoning brain:
 
 * input: text, images, audio, and video-as-frames
