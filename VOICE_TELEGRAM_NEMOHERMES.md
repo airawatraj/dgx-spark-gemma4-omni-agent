@@ -59,17 +59,16 @@ Use this `~/boot.sh`:
 
 ```bash
 #!/bin/bash
+# OpenShell sandbox does not load user site packages into Hermes venv
 # 1. Fix paths
-export PATH="/sandbox/.local/bin:$PATH"
-export PYTHONPATH="/sandbox/.local/lib/python3.11/site-packages:${PYTHONPATH:-}"
-
+# expose packages installed via /usr/bin/pip --user
+export PYTHONPATH=/sandbox/.local/lib/python3.13/site-packages:${PYTHONPATH:-}
 # 2. Clear ghost locks
 rm -f ~/.hermes/gateway.pid
 rm -rf ~/.local/state/hermes/gateway-locks/
-
 # 3. Start the gateway quietly in the background
 nohup hermes gateway run --replace > ~/gateway.log 2>&1 &
-echo "⚕️ Hermes Gateway, DuckDuckGo PATH, and local STT path initialized."
+echo "Local STT path initialized."
 ```
 
 Make it executable if needed:
